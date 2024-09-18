@@ -5,7 +5,7 @@
 #include "util/gate.h"
 
 #define CELL_STATE_SIZE 4
-#define INPUT_SIZE 1
+#define INPUT_SIZE 2
 #define BACKPROP_INTERVAL 10
 #define SAVE_INTERVAL 1000000
 #define LEARNING_MOD 0.01
@@ -28,9 +28,9 @@ namespace mantis {
         return 1-pow(std::tanh(in), 2);
     }
 
-    VectorXd getInput(int timeStep) {
+    VectorXd getInput(long timeStep) {
         VectorXd out(INPUT_SIZE);
-        out << sin(timeStep * EIGEN_PI / 180 * 10);
+        out << sin(timeStep * EIGEN_PI / 180 * 10), cos(timeStep * EIGEN_PI / 180 * 10);
 
         return out;
     }
@@ -132,9 +132,9 @@ namespace mantis {
         };
     }
 
-    void backpropagation(int t,
+    void backpropagation(long t,
                          GateArray& gates,
-                         const circbuf<Cache*> caches,
+                         const circbuf<Cache*>& caches,
                          const VectorXd& expected) {
         Cache* lastCache = caches[BACKPROP_INTERVAL-1];
         VectorXd prediction = (2 * lastCache->dataOut).unaryExpr([](double d) {return d-1;});
@@ -143,9 +143,21 @@ namespace mantis {
         for (int i = 0; i < INPUT_SIZE; i++) {
             loss += pow(prediction(i) - expected(i), 2);
         }
-        if (t % 25000 == 0) std::cout << "loss: " << round(loss*1000)/1000 << " (" << round(prediction(0)*1000)/1000 << " vs " << round(expected(0)*1000)/1000 << ")" << std::endl;
+        if (t % 25000 == 0) {
+            std::cout << "loss: " << round(loss*1000)/1000 << " [(";
+            for (int i = 0; i < INPUT_SIZE; i++) {
+                std::cout << round(prediction(i)*1000)/1000;
+                if (i != INPUT_SIZE-1) std::cout << ",";
+            }
+            std::cout << ") vs (";
+            for (int i = 0; i < INPUT_SIZE; i++) {
+                std::cout << round(expected(i)*1000)/1000;
+                if (i != INPUT_SIZE-1) std::cout << ",";
+            }
+            std::cout << ")]" << std::endl;
+        }
 
-        VectorXd dData = 2 * (expected - prediction) * lastCache->dataGateIn.unaryExpr(std::ref(tanh_der));
+        VectorXd dData = (2 * (expected - prediction)).cwiseProduct(lastCache->dataGateIn.unaryExpr(std::ref(tanh_der)));
 
         gates.data.weight += LEARNING_MOD * (dData * lastCache->hiddenStateOut.transpose());
         gates.data.bias += LEARNING_MOD * dData;
@@ -201,26 +213,28 @@ int main() {
     VectorXd hiddenState(CELL_STATE_SIZE);
 
     ifstream load("gradients.csv");
-    gates.forget.load(load);
-    gates.sInput.load(load);
-    gates.tInput.load(load);
-    gates.output.load(load);
-    gates.data.load(load);
+    if (load.good()) {
+        gates.forget.load(load);
+        gates.sInput.load(load);
+        gates.tInput.load(load);
+        gates.output.load(load);
+        gates.data.load(load);
 
-    std::string line;
-    std::getline(load, line);
-    std::stringstream ss1(line);
-    std::string num;
-    for (int i = 0; i < cellState.size(); i++) {
-        getline(ss1, num, ',');
-        cellState(i) = std::stod(num);
-    }
+        std::string line;
+        std::getline(load, line);
+        std::stringstream ss1(line);
+        std::string num;
+        for (int i = 0; i < cellState.size(); i++) {
+            getline(ss1, num, ',');
+            cellState(i) = std::stod(num);
+        }
 
-    std::getline(load, line);
-    std::stringstream ss2(line);
-    for (int i = 0; i < hiddenState.size(); i++) {
-        getline(ss2, num, ',');
-        hiddenState(i) = std::stod(num);
+        std::getline(load, line);
+        std::stringstream ss2(line);
+        for (int i = 0; i < hiddenState.size(); i++) {
+            getline(ss2, num, ',');
+            hiddenState(i) = std::stod(num);
+        }
     }
     load.close();
 
