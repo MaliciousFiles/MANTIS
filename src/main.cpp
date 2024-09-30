@@ -4,8 +4,9 @@
 #include "util/circbuf.h"
 #include "util/gate.h"
 
-#define CELL_STATE_SIZE 4
-#define INPUT_SIZE 2
+#define RND 10000000
+#define CELL_STATE_SIZE 5
+#define INPUT_SIZE 1
 #define BACKPROP_INTERVAL 10
 #define SAVE_INTERVAL 1000000
 #define LEARNING_MOD 0.01
@@ -30,7 +31,14 @@ namespace mantis {
 
     VectorXd getInput(long timeStep) {
         VectorXd out(INPUT_SIZE);
-        out << sin(timeStep * EIGEN_PI / 180 * 10), cos(timeStep * EIGEN_PI / 180 * 10);
+        out << (timeStep % 312)/312.0;
+
+        return out;
+    }
+
+    VectorXd adjustOutput(const VectorXd& output) {
+        VectorXd out(INPUT_SIZE);
+        out << output(0);
 
         return out;
     }
@@ -137,21 +145,21 @@ namespace mantis {
                          const circbuf<Cache*>& caches,
                          const VectorXd& expected) {
         Cache* lastCache = caches[BACKPROP_INTERVAL-1];
-        VectorXd prediction = (2 * lastCache->dataOut).unaryExpr([](double d) {return d-1;});
+        VectorXd prediction = adjustOutput(lastCache->dataOut);
 
         double loss = 0;
         for (int i = 0; i < INPUT_SIZE; i++) {
             loss += pow(prediction(i) - expected(i), 2);
         }
         if (t % 25000 == 0) {
-            std::cout << "loss: " << round(loss*1000)/1000 << " [(";
+            std::cout << "loss: " << round(loss*RND)/RND << " [(";
             for (int i = 0; i < INPUT_SIZE; i++) {
-                std::cout << round(prediction(i)*1000)/1000;
+                std::cout << round(prediction(i)*RND)/RND;
                 if (i != INPUT_SIZE-1) std::cout << ",";
             }
             std::cout << ") vs (";
             for (int i = 0; i < INPUT_SIZE; i++) {
-                std::cout << round(expected(i)*1000)/1000;
+                std::cout << round(expected(i)*RND)/RND;
                 if (i != INPUT_SIZE-1) std::cout << ",";
             }
             std::cout << ")]" << std::endl;

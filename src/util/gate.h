@@ -26,10 +26,10 @@ public:
         bias = VectorXd(outputSize);
 
         for (int i = 0; i < weight.rows(); i++) {
-            for (int j = 0; j < weight.cols(); j++) weight(i,j) = (double) random() / RAND_MAX;
+            for (int j = 0; j < weight.cols(); j++) weight(i,j) = 2*((double) random() / RAND_MAX)-1;
         }
 
-        for (int i = 0; i < bias.size(); i++) bias(i) = (double) random() / RAND_MAX;
+        for (int i = 0; i < bias.size(); i++) bias(i) = 2*((double) random() / RAND_MAX)-1;
     }
 
     std::tuple<VectorXd, VectorXd> apply(const VectorXd& input) const;
