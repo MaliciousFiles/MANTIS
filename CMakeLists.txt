@@ -13,5 +13,4 @@ add_executable(MANTIS src/main.cpp
         src/util/gate.h
         src/util/gate.cpp
         src/util/circbuf.h
-        src/inputs.cpp
 )

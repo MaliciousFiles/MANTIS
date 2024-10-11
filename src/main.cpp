@@ -3,14 +3,19 @@
 #include <vector>
 #include "util/circbuf.h"
 #include "util/gate.h"
+#include "inputs.cpp"
 
 #define RND 10000000
-#define CELL_STATE_SIZE 5
-#define INPUT_SIZE 1
+#define CELL_STATE_SIZE 26
+#define INPUT_SIZE 7
 #define BACKPROP_INTERVAL 10
-#define SAVE_INTERVAL 1000000
+#define SAVE_INTERVAL 10000000000
 #define LEARNING_MOD 0.01
 #define GATE_INPUT_SIZE (INPUT_SIZE + CELL_STATE_SIZE)
+
+#define INPUT inputs::twoUserOverlap/*singleUserDayJob*/
+#define ADJUST_OUTPUT outputAdjusters::userAuth
+#define INTERPRET_OUTPUT outputInterpreters::userAuth
 
 namespace mantis {
     double sigmoid(double in) {
@@ -27,20 +32,6 @@ namespace mantis {
 
     double tanh_der(double in) {
         return 1-pow(std::tanh(in), 2);
-    }
-
-    VectorXd getInput(long timeStep) {
-        VectorXd out(INPUT_SIZE);
-        out << (timeStep % 312)/312.0;
-
-        return out;
-    }
-
-    VectorXd adjustOutput(const VectorXd& output) {
-        VectorXd out(INPUT_SIZE);
-        out << output(0);
-
-        return out;
     }
 
     struct GateArray {
@@ -140,29 +131,20 @@ namespace mantis {
         };
     }
 
+    long backprops = 0;
     void backpropagation(long t,
                          GateArray& gates,
                          const circbuf<Cache*>& caches,
                          const VectorXd& expected) {
         Cache* lastCache = caches[BACKPROP_INTERVAL-1];
-        VectorXd prediction = adjustOutput(lastCache->dataOut);
+        VectorXd prediction = ADJUST_OUTPUT(lastCache->dataOut);
 
         double loss = 0;
         for (int i = 0; i < INPUT_SIZE; i++) {
             loss += pow(prediction(i) - expected(i), 2);
         }
-        if (t % 25000 == 0) {
-            std::cout << "loss: " << round(loss*RND)/RND << " [(";
-            for (int i = 0; i < INPUT_SIZE; i++) {
-                std::cout << round(prediction(i)*RND)/RND;
-                if (i != INPUT_SIZE-1) std::cout << ",";
-            }
-            std::cout << ") vs (";
-            for (int i = 0; i < INPUT_SIZE; i++) {
-                std::cout << round(expected(i)*RND)/RND;
-                if (i != INPUT_SIZE-1) std::cout << ",";
-            }
-            std::cout << ")]" << std::endl;
+        if (backprops++ % 500 == 0) {
+            std::cout << "loss: " << round(loss*RND)/RND << " | " << INTERPRET_OUTPUT(prediction) << " vs " << INTERPRET_OUTPUT(expected) << std::endl;
         }
 
         VectorXd dData = (2 * (expected - prediction)).cwiseProduct(lastCache->dataGateIn.unaryExpr(std::ref(tanh_der)));
@@ -253,10 +235,10 @@ int main() {
     long t = 0;
     while (true) {
         if (t != 0 && t % BACKPROP_INTERVAL == 0) {
-            backpropagation(t, gates, caches, getInput(t));
+            backpropagation(t, gates, caches, INPUT(t));
         }
 
-        Cache* cache = forwardPass(gates, cellState, hiddenState, getInput(t));
+        Cache* cache = forwardPass(gates, cellState, hiddenState, INPUT(t));
         cellState = cache->cellStateOut;
         hiddenState = cache->hiddenStateOut;
 
