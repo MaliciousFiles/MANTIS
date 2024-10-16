@@ -8,15 +8,15 @@
 #define DEBUG_INTERVAL 501
 #define RND 10000000
 #define CELL_STATE_SIZE 26
-#define INPUT_SIZE 7
 #define BACKPROP_INTERVAL 10
 #define SAVE_INTERVAL 1000000000
 #define LEARNING_MOD 0.01
 #define GATE_INPUT_SIZE (INPUT_SIZE + CELL_STATE_SIZE)
 
-#define INPUT inputs::twoUserOverlap/*singleUserDayJob*/
-#define ADJUST_OUTPUT outputAdjusters::userAuth
-#define INTERPRET_OUTPUT outputInterpreters::userAuth
+#define INPUT inputs::math/*twoUserOverlap/*singleUserDayJob*/
+#define INPUT_SIZE inputs::mathSize/*twoUserOverlapSize/*singleUserDayJobSize*/
+#define ADJUST_OUTPUT outputAdjusters::none/*userAuth*/
+#define INTERPRET_OUTPUT outputInterpreters::basic/*userAuth*/
 
 namespace mantis {
     double sigmoid(double in) {

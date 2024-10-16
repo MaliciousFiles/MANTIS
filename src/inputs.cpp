@@ -7,9 +7,17 @@ using namespace std;
 #define UIV_LEN 4
 
 namespace mantis::inputs {
+    const int mathSize = 1;
+    VectorXd math(long timeStep) {
+        VectorXd input(mathSize);
+        input << sin(timeStep);
+        return input;
+    }
+
     // simulates a single user (successfully) logging in between 8-9 AM and logging out between 5-6 PM
+    const int singleUserDayJobSize = 3 + UIV_LEN;
     VectorXd singleUserDayJob(long timeStep) {
-        VectorXd input(3 + UIV_LEN);
+        VectorXd input(singleUserDayJobSize);
 
         int hour;
         int minute;
@@ -39,8 +47,9 @@ namespace mantis::inputs {
     }
 
     // simulates two users with offset, overlapping shifts
+    const int twoUserOverlapSize = 3 + UIV_LEN;
     VectorXd twoUserOverlap(long timeStep) {
-        VectorXd input(3 + UIV_LEN);
+        VectorXd input(twoUserOverlapSize);
 
         int hour;
         int minute;
@@ -81,6 +90,10 @@ namespace mantis::inputs {
 }
 
 namespace mantis::outputAdjusters {
+    VectorXd none(const VectorXd& output) {
+        return output;
+    }
+
     VectorXd userAuth(const VectorXd& output) {
         VectorXd out(output.size());
 
@@ -96,6 +109,17 @@ namespace mantis::outputAdjusters {
 }
 
 namespace mantis::outputInterpreters {
+    string basic(const VectorXd& output) {
+        stringstream out;
+        out << "(";
+        for (int i = 0; i < output.size(); i++) {
+            out << output(i);
+            if (i < output.size()-1) out << ", ";
+        }
+        out << ")";
+        return out.str();
+    }
+
     string userAuth(const VectorXd& output) {
         stringstream out;
         out << "("
