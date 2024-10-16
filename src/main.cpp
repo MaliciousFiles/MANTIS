@@ -5,11 +5,12 @@
 #include "util/gate.h"
 #include "inputs.cpp"
 
+#define DEBUG_INTERVAL 501
 #define RND 10000000
 #define CELL_STATE_SIZE 26
 #define INPUT_SIZE 7
 #define BACKPROP_INTERVAL 10
-#define SAVE_INTERVAL 10000000000
+#define SAVE_INTERVAL 1000000000
 #define LEARNING_MOD 0.01
 #define GATE_INPUT_SIZE (INPUT_SIZE + CELL_STATE_SIZE)
 
@@ -143,7 +144,7 @@ namespace mantis {
         for (int i = 0; i < INPUT_SIZE; i++) {
             loss += pow(prediction(i) - expected(i), 2);
         }
-        if (backprops++ % 500 == 0) {
+        if (backprops++ % DEBUG_INTERVAL == 0) {
             std::cout << "loss: " << round(loss*RND)/RND << " | " << INTERPRET_OUTPUT(prediction) << " vs " << INTERPRET_OUTPUT(expected) << std::endl;
         }
 
