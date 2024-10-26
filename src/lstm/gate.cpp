@@ -3,6 +3,7 @@
 //
 
 #include "gate.h"
+using namespace mantis::lstm;
 
 std::tuple<VectorXd, VectorXd> Gate::apply(const VectorXd& gateInput) const {
     VectorXd input = weight * gateInput + bias;

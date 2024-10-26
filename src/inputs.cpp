@@ -7,13 +7,6 @@ using namespace std;
 #define UIV_LEN 4
 
 namespace mantis::inputs {
-    const int mathSize = 1;
-    VectorXd math(long timeStep) {
-        VectorXd input(mathSize);
-        input << sin(timeStep);
-        return input;
-    }
-
     // simulates a single user (successfully) logging in between 8-9 AM and logging out between 5-6 PM
     const int singleUserDayJobSize = 3 + UIV_LEN;
     VectorXd singleUserDayJob(long timeStep) {
