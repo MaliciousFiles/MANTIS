@@ -31,8 +31,7 @@ int main() {
     long t;
     while (true) {
         VectorXd input(1);
-        input << sin(2*cos(t));
-        input << sin(t), cos(t);
+        input << sin(t);
         VectorXd prediction = math.predict(input);
 
         if (t < 120) {
