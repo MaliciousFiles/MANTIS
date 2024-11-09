@@ -1,7 +1,10 @@
 #include "lstm/lstm.h"
 #include "inputs.cpp"
 #include <set>
+#include <thread>
 #include <matplot/matplot.h>
+
+#define GRAPH false
 
 using namespace mantis;
 using namespace matplot;
@@ -12,50 +15,63 @@ int main() {
 
     LSTM math("math", 1, 7, 10, 2, 2001,
                  1000000000, outputAdjusters::none, outputInterpreters::basic);
+    LSTM userAuth("user_auth", inputs::userAuthSize, 25, 10, 3, 501,
+              1000000000, outputAdjusters::userAuth, outputInterpreters::userAuth);
 
+#if GRAPH
+    vector<vector<double>> inputs;
+    vector<vector<double>> predictions;
+    vector<figure_handle> figures;
+    vector<vector<line_handle>> lines;
 
-    vector<double> realY1, predY1, realY2, predY2, realY3, predY3;
+    const int graphs = 4;
+    for (int i = 0; i < graphs; i++) {
+        vector<double> input;
+        vector<double> prediction;
 
-    auto f1 = figure();
-    auto lines1 = plot(predY1, "-b", realY1, "-r");
-    ylim({-1.5, 1.5});
+        auto f = figure(true);
+        auto plots = plot(input, "-b", prediction, "-r");
+        ylim({-2, 2});
 
-    auto f2 = figure();
-    auto lines2 = plot(predY2, "-b", realY2, "-r");
-    ylim({-1.5, 1.5});
+        figures.push_back(f);
+        lines.push_back(plots);
+        inputs.push_back(input);
+        predictions.push_back(input);
 
-    auto f3 = figure();
-    auto lines3 = plot(predY3, "-b", realY3, "-r");
-    ylim({-1.5, 1.5});
+        f->draw();
+    }
 
-    long t;
+    cout << "Setup windows";
+    cin.ignore();
+
+    bool updating = false;
+    auto toggleUpdating = [&] () mutable -> void {
+        while (1) {
+            cin.ignore();
+            updating = !updating;
+        }
+    };
+    thread updateThread(toggleUpdating);
+#endif
+
+    long t = 0;
     while (true) {
-        VectorXd input(1);
-        input << sin(t);
-        VectorXd prediction = math.predict(input);
+        VectorXd input = inputs::singleUserDayJob(t);
+        VectorXd prediction = userAuth.predict(input);
 
-        if (t < 120) {
-            realY1.push_back(input(0));
-            predY1.push_back(prediction(0));
+#if GRAPH
+        if (updating) {
+            for (int i = 0; i < graphs; i++) {
+                inputs[i].push_back(input(i));
+                predictions[i].push_back(prediction(i));
 
-            lines1[0]->y_data(predY1);
-            lines1[1]->y_data(realY1);
+                lines[i][0]->y_data(predictions[i]);
+                lines[i][1]->y_data(inputs[i]);
+
+                figures[i]->draw();
+            }
         }
-        if (t > 50000 && t < 50120) {
-            realY2.push_back(input(0));
-            predY2.push_back(prediction(0));
-
-            lines2[0]->y_data(predY2);
-            lines2[1]->y_data(realY2);
-        }
-        if (t > 500000 && t < 500120) {
-            realY3.push_back(input(0));
-            predY3.push_back(prediction(0));
-
-            lines3[0]->y_data(predY3);
-            lines3[1]->y_data(realY3);
-        }
-
+#endif
 
         t++;
     }

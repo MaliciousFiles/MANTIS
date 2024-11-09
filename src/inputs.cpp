@@ -7,10 +7,11 @@ using namespace std;
 #define UIV_LEN 4
 
 namespace mantis::inputs {
+    const int userAuthSize = 3 + UIV_LEN;
+
     // simulates a single user (successfully) logging in between 8-9 AM and logging out between 5-6 PM
-    const int singleUserDayJobSize = 3 + UIV_LEN;
     VectorXd singleUserDayJob(long timeStep) {
-        VectorXd input(singleUserDayJobSize);
+        VectorXd input(userAuthSize);
 
         int hour;
         int minute;
@@ -40,9 +41,8 @@ namespace mantis::inputs {
     }
 
     // simulates two users with offset, overlapping shifts
-    const int twoUserOverlapSize = 3 + UIV_LEN;
     VectorXd twoUserOverlap(long timeStep) {
-        VectorXd input(twoUserOverlapSize);
+        VectorXd input(userAuthSize);
 
         int hour;
         int minute;
